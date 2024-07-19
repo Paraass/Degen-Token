@@ -8,7 +8,10 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 contract DegenToken is ERC20, Ownable, ERC20Burnable {
     uint256 public constant MAX_SUPPLY = 500000; 
 
-    constructor() ERC20("Degen Token", "DGN") Ownable(msg.sender) {
+    // Mapping of item names to their required token amounts
+    mapping(string => uint256) public itemPrices;
+
+    constructor() ERC20("Degen Token", "DGN")Ownable(msg.sender) {
         _mint(msg.sender, 20000); 
     }
 
@@ -31,13 +34,24 @@ contract DegenToken is ERC20, Ownable, ERC20Burnable {
         _burn(msg.sender, _value);
     }
 
-    function redeemTokens(uint256 amount) external {
-        require(balanceOf(msg.sender) >= amount, "You do not have enough Tokens");
-        _burn(msg.sender, amount);
+    function setItemPrice(string memory itemName, uint256 price) external onlyOwner {
+        itemPrices[itemName] = price;
+    }
+
+    function redeemTokens(string memory itemName) external {
+        uint256 price = itemPrices[itemName];
+        require(price > 0, "Item not found or price not set");
+        require(balanceOf(msg.sender) >= price, "You do not have enough Tokens");
+        _burn(msg.sender, price);
+        emit ItemRedeemed(msg.sender, itemName, price);
     }
 
     function getBalance() external view returns (uint256) {
         return balanceOf(msg.sender);
     }
+
+    // Event for item redemption
+    event ItemRedeemed(address indexed user, string itemName, uint256 amount);
 }
+
 
